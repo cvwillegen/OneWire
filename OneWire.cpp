@@ -142,9 +142,13 @@ sample code bearing this copyright.
 #include "OneWire.h"
 
 
-OneWire::OneWire(uint8_t pin)
+OneWire::OneWire(uint8_t pin, bool pullup /* = false */)
+	: m_pullup(pullup)
 {
-	pinMode(pin, INPUT);
+	if (m_pullup)
+		pinMode(pin, INPUT_PULLUP);
+	else
+		pinMode(pin, INPUT);
 	bitmask = PIN_TO_BITMASK(pin);
 	baseReg = PIN_TO_BASEREG(pin);
 #if ONEWIRE_SEARCH
@@ -182,6 +186,8 @@ uint8_t OneWire::reset(void)
 	delayMicroseconds(480);
 	noInterrupts();
 	DIRECT_MODE_INPUT(reg, mask);	// allow it to float
+	if (m_pullup)
+		DIRECT_WRITE_HIGH( reg, mask );	// enable pull-up register
 	delayMicroseconds(70);
 	r = !DIRECT_READ(reg, mask);
 	interrupts();
@@ -232,6 +238,8 @@ uint8_t OneWire::read_bit(void)
 	DIRECT_WRITE_LOW(reg, mask);
 	delayMicroseconds(3);
 	DIRECT_MODE_INPUT(reg, mask);	// let pin float, pull up will raise
+	if (m_pullup)
+		DIRECT_WRITE_HIGH( reg, mask);	// enable pull-up resistor
 	delayMicroseconds(10);
 	r = DIRECT_READ(reg, mask);
 	interrupts();
@@ -255,7 +263,8 @@ void OneWire::write(uint8_t v, uint8_t power /* = 0 */) {
     if ( !power) {
 	noInterrupts();
 	DIRECT_MODE_INPUT(baseReg, bitmask);
-	DIRECT_WRITE_LOW(baseReg, bitmask);
+	if (!m_pullup)
+		DIRECT_WRITE_LOW(baseReg, bitmask);
 	interrupts();
     }
 }
@@ -266,7 +275,8 @@ void OneWire::write_bytes(const uint8_t *buf, uint16_t count, bool power /* = 0 
   if (!power) {
     noInterrupts();
     DIRECT_MODE_INPUT(baseReg, bitmask);
-    DIRECT_WRITE_LOW(baseReg, bitmask);
+    if (!m_pullup)
+	    DIRECT_WRITE_LOW(baseReg, bitmask);
     interrupts();
   }
 }

@@ -261,6 +261,7 @@ class OneWire
   private:
     IO_REG_TYPE bitmask;
     volatile IO_REG_TYPE *baseReg;
+    bool m_pullup;
 
 #if ONEWIRE_SEARCH
     // global search state
@@ -271,7 +272,7 @@ class OneWire
 #endif
 
   public:
-    OneWire( uint8_t pin);
+    OneWire( uint8_t pin, bool pullup = false);
 
     // Perform a 1-Wire reset cycle. Returns 1 if a device responds
     // with a presence pulse.  Returns 0 if there is no device or the
